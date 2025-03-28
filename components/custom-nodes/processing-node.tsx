@@ -34,9 +34,8 @@ const ProcessingNode: React.FC<ProcessingNodeProps> = ({ data, isConnectable, se
 
   return (
     <div
-      className={`p-3 rounded-md border-2 ${selected ? "border-blue-500" : "border-blue-200"} ${
-        data.isActive === false ? "opacity-50" : ""
-      } bg-blue-50 shadow-sm w-48 relative`}
+      className={`p-3 rounded-md border-2 ${ selected ? "border-blue-500" : "border-blue-200" } ${ data.isActive === false ? "opacity-50" : ""
+        } ${ data.isPlaying ? "animate-pulse shadow-lg shadow-blue-200" : "" } bg-blue-50 shadow-sm w-48 relative`}
     >
       <NodeControls
         nodeId={id}
@@ -76,6 +75,7 @@ const ProcessingNode: React.FC<ProcessingNodeProps> = ({ data, isConnectable, se
           id={input.key}
           style={{ top: 40 + index * 10, background: "#555" }}
           isConnectable={isConnectable}
+          className={data.isPlaying ? "animate-ping" : ""}
         />
       ))}
 
@@ -88,6 +88,7 @@ const ProcessingNode: React.FC<ProcessingNodeProps> = ({ data, isConnectable, se
           id={output.key}
           style={{ top: 40 + index * 10, background: "#555" }}
           isConnectable={isConnectable}
+          className={data.isPlaying ? "animate-ping" : ""}
         />
       ))}
 
@@ -99,13 +100,12 @@ const ProcessingNode: React.FC<ProcessingNodeProps> = ({ data, isConnectable, se
       {/* Show execution status indicator if available */}
       {data.executionStatus && (
         <div
-          className={`absolute top-0 left-0 w-2 h-2 rounded-full m-1 ${
-            data.executionStatus === "success"
-              ? "bg-green-500"
-              : data.executionStatus === "error"
-                ? "bg-red-500"
-                : "bg-yellow-500"
-          }`}
+          className={`absolute top-0 left-0 w-2 h-2 rounded-full m-1 ${ data.executionStatus === "success"
+            ? "bg-green-500"
+            : data.executionStatus === "error"
+              ? "bg-red-500"
+              : "bg-yellow-500"
+            }`}
         />
       )}
 

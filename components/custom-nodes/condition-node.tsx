@@ -14,9 +14,8 @@ interface ConditionNodeProps {
 const ConditionNode: React.FC<ConditionNodeProps> = ({ data, isConnectable, selected, id }) => {
   return (
     <div
-      className={`p-3 rounded-md border-2 ${selected ? "border-blue-500" : "border-yellow-200"} ${
-        data.isActive === false ? "opacity-50" : ""
-      } bg-yellow-50 shadow-sm w-48 relative`}
+      className={`p-3 rounded-md border-2 ${ selected ? "border-blue-500" : "border-yellow-200" } ${ data.isActive === false ? "opacity-50" : ""
+        } ${ data.isPlaying ? "animate-pulse shadow-lg shadow-yellow-200" : "" } bg-yellow-50 shadow-sm w-48 relative`}
     >
       <NodeControls
         nodeId={id}
@@ -39,6 +38,7 @@ const ConditionNode: React.FC<ConditionNodeProps> = ({ data, isConnectable, sele
           id={input.key}
           style={{ top: 40 + index * 10, background: "#555" }}
           isConnectable={isConnectable}
+          className={data.isPlaying ? "animate-ping" : ""}
         />
       ))}
 
@@ -51,6 +51,7 @@ const ConditionNode: React.FC<ConditionNodeProps> = ({ data, isConnectable, sele
           id={output.key}
           style={{ top: 40 + index * 10, background: "#555" }}
           isConnectable={isConnectable}
+          className={data.isPlaying ? "animate-ping" : ""}
         />
       ))}
 
@@ -62,13 +63,12 @@ const ConditionNode: React.FC<ConditionNodeProps> = ({ data, isConnectable, sele
       {/* Show execution status indicator if available */}
       {data.executionStatus && (
         <div
-          className={`absolute top-0 left-0 w-2 h-2 rounded-full m-1 ${
-            data.executionStatus === "success"
-              ? "bg-green-500"
-              : data.executionStatus === "error"
-                ? "bg-red-500"
-                : "bg-yellow-500"
-          }`}
+          className={`absolute top-0 left-0 w-2 h-2 rounded-full m-1 ${ data.executionStatus === "success"
+            ? "bg-green-500"
+            : data.executionStatus === "error"
+              ? "bg-red-500"
+              : "bg-yellow-500"
+            }`}
         />
       )}
     </div>

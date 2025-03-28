@@ -32,18 +32,18 @@ export default function NodeControls({
       >
         {isPlaying ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
       </Button>
-      <Button
+      {/* <Button
         variant="ghost"
         size="icon"
         className="h-5 w-5 bg-white/80 hover:bg-white"
         onClick={() => onOpenConsole(nodeId)}
       >
         <Terminal className="h-3 w-3" />
-      </Button>
+      </Button> */}
       <Button
         variant="ghost"
         size="icon"
-        className={`h-5 w-5 ${isActive ? "bg-green-100 hover:bg-green-200" : "bg-red-100 hover:bg-red-200"}`}
+        className={`h-5 w-5 ${ isActive ? "bg-green-100 hover:bg-green-200" : "bg-red-100 hover:bg-red-200" }`}
         onClick={() => onToggleActive(nodeId)}
       >
         {isActive ? <Power className="h-3 w-3 text-green-500" /> : <PowerOff className="h-3 w-3 text-red-500" />}

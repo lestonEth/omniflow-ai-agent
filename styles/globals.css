@@ -48,6 +48,7 @@ body {
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
+
   .dark {
     --background: 0 0% 3.9%;
     --foreground: 0 0% 98%;
@@ -88,6 +89,7 @@ body {
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }
@@ -98,3 +100,34 @@ body {
   @apply bg-white/20 backdrop-blur-md border border-white/30 shadow-xl;
 }
 
+/* Edge animation for data flow */
+@keyframes flowAnimation {
+  0% {
+    stroke-dasharray: 5;
+    stroke-dashoffset: 0;
+  }
+
+  100% {
+    stroke-dasharray: 5;
+    stroke-dashoffset: -10;
+  }
+}
+
+/* Node execution animation */
+@keyframes nodeExecution {
+  0% {
+    box-shadow: 0 0 0 rgba(59, 130, 246, 0);
+  }
+
+  50% {
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+  }
+
+  100% {
+    box-shadow: 0 0 0 rgba(59, 130, 246, 0);
+  }
+}
+
+.node-executing {
+  animation: nodeExecution 1.5s infinite;
+}
