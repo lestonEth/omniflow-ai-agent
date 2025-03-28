@@ -4,7 +4,7 @@ import React, { createContext, useContext, useCallback, ReactNode } from 'react'
 import { Node } from "@xyflow/react"
 import { useFlow } from './FlowContext'
 import { useToast } from "@/components/ui/use-toast"
-import { simulateNode } from "@/lib/node-simulator"
+import { simulateNode } from '@/lib/simulation'
 
 interface NodeContextType {
     handleNodePlayPause: (nodeId: string) => void
@@ -48,7 +48,7 @@ export const NodeProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                                 })
                             })
                             .catch(error => {
-                                console.error(`Simulation error for node ${nodeId}: `, error)
+                                console.error(`Simulation error for node ${ nodeId }: `, error)
                             })
                     }
 
@@ -59,7 +59,7 @@ export const NodeProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                             isPlaying,
                             consoleOutput: [
                                 ...(node.data.consoleOutput as any || []),
-                                `[${new Date().toLocaleTimeString()}] Node ${isPlaying ? 'started' : 'paused'} `
+                                `[${ new Date().toLocaleTimeString() }] Node ${ isPlaying ? 'started' : 'paused' } `
                             ]
                         }
                     }
@@ -82,7 +82,7 @@ export const NodeProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                             isPlaying: isActive ? node.data.isPlaying : false,
                             consoleOutput: [
                                 ...(node.data.consoleOutput as any || []),
-                                `[${new Date().toLocaleTimeString()}] Node ${isActive ? 'activated' : 'deactivated'} `
+                                `[${ new Date().toLocaleTimeString() }] Node ${ isActive ? 'activated' : 'deactivated' } `
                             ]
                         }
                     }

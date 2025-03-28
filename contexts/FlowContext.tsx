@@ -10,7 +10,7 @@ import {
     applyEdgeChanges,
     addEdge,
 } from "@xyflow/react"
-import { propagateOutputToConnectedNodes, simulateNode } from "@/lib/node-simulator"
+import { propagateOutputToConnectedNodes, simulateNode } from "@/lib/simulation"
 
 interface FlowContextType {
     nodes: Node[]

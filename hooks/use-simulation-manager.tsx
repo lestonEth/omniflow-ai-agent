@@ -3,7 +3,8 @@
 import { useState, useCallback, useEffect } from "react"
 import { useFlow } from "@/contexts/FlowContext"
 import { useSimulation } from "@/contexts/SimulationContext"
-import { simulateNode } from "@/lib/node-simulator"
+// import { simulateNode } from "@/lib/node-simulator"
+import simulateNode from "@/lib/simulation"
 
 export const useSimulationLogic = () => {
     const { nodes, edges, setNodes } = useFlow()
