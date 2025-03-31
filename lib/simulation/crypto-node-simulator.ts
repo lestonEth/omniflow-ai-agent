@@ -21,102 +21,147 @@ export function simulateCryptoWallet(data: any) {
         const balance = generateRandomBalance(network)
         const currency = getCurrencyForNetwork(network)
 
-        outputs["connected"] = true
-        outputs["walletInfo"] = {
+        // Create wallet info object
+        const walletInfo = {
             address,
             network,
             currency,
             connectionType,
             lastUpdated: new Date().toISOString(),
+            connected: true, // Explicitly set connected flag
         }
+
+        // Set outputs with explicit connected flag
+        outputs["connected"] = true
+        outputs["walletInfo"] = walletInfo
         outputs["balance"] = balance
+
+        console.log("Crypto Wallet simulator generated output:", outputs)
     } else {
         outputs["connected"] = false
         outputs["walletInfo"] = null
         outputs["balance"] = 0
+
+        console.log("Crypto Wallet simulator - not connected")
     }
 
     return outputs
 }
 
-// Simulate crypto trade execution
+// Improve the simulateCryptoTrade function to better handle wallet info
 export function simulateCryptoTrade(data: any, inputValues: Record<string, any>) {
     const outputs: Record<string, any> = {}
 
-    // Get wallet info from input or node configuration
-    const walletInfo = inputValues["walletInfo"] || data.inputs?.find((input: any) => input.key === "walletInfo")?.value
+    // Enhanced wallet info extraction
+    let walletInfo = null
 
-    // Get trade details
-    const action = data.inputs?.find((input: any) => input.key === "action")?.value || "Buy"
-    const token = data.inputs?.find((input: any) => input.key === "token")?.value || "ETH"
-    const amount = data.inputs?.find((input: any) => input.key === "amount")?.value || 0.1
-    const targetToken = data.inputs?.find((input: any) => input.key === "targetToken")?.value || "USDT"
-    const priceLimit = data.inputs?.find((input: any) => input.key === "priceLimit")?.value || 0
+    // Check different possible locations for wallet info
+    if (inputValues["walletInfo"]) {
+        // Direct walletInfo input
+        walletInfo = inputValues["walletInfo"]
+    } else if (data.inputs?.find((input: any) => input.key === "walletInfo")?.value) {
+        // walletInfo from node configuration
+        walletInfo = data.inputs.find((input: any) => input.key === "walletInfo").value
+    }
+
+    // Handle deeply nested wallet info structures
+    if (walletInfo && typeof walletInfo === "object") {
+        // If walletInfo is nested inside another object, extract it
+        if (walletInfo.walletInfo) {
+            walletInfo = walletInfo.walletInfo
+        } else if (!walletInfo.address && walletInfo.wallet) {
+            // If we have a transaction with wallet address in it
+            walletInfo = {
+                address: walletInfo.wallet,
+                network: walletInfo.network || "Ethereum",
+                lastUpdated: walletInfo.timestamp || new Date().toISOString(),
+            }
+        }
+    }
 
     // Check if wallet is connected
-    if (!walletInfo) {
-        outputs["status"] = "failed"
-        outputs["transactionId"] = null
+    const isWalletConnected = walletInfo && (walletInfo.connected === true || walletInfo.address)
+
+    // Enhanced recommendation extraction
+    const recommendation = inputValues["recommendation"]
+    let action = data.inputs?.find((input: any) => input.key === "action")?.value || "Buy"
+    let token = data.inputs?.find((input: any) => input.key === "token")?.value || "ETH"
+    let amount = data.inputs?.find((input: any) => input.key === "amount")?.value || 0.1
+
+    // Override with recommendation if available
+    if (recommendation) {
+        if (recommendation.action) {
+            // Handle case variations
+            action = recommendation.action.charAt(0).toUpperCase() + recommendation.action.slice(1).toLowerCase()
+        }
+        if (recommendation.token) {
+            token = recommendation.token
+        }
+        if (recommendation.amount) {
+            // Handle amount as either number or string
+            amount =
+                typeof recommendation.amount === "string" ? Number.parseFloat(recommendation.amount) : recommendation.amount
+        }
+    }
+
+    // Simulate trade execution
+    if (isWalletConnected) {
+        // Generate a random transaction ID
+        const transactionId = generateRandomTxId(walletInfo.network || "Ethereum")
+
+        // Calculate price based on token
+        const price = generateRandomPrice(token)
+
+        // Calculate total cost
+        const total = price * amount
+
+        // Set success status
+        outputs["status"] = "completed"
+        outputs["transactionId"] = transactionId
         outputs["details"] = {
-            error: "Wallet not connected",
+            action,
+            token,
+            amount,
+            price: price.toFixed(2),
+            total,
             timestamp: new Date().toISOString(),
+            wallet: walletInfo.address,
+            network: walletInfo.network || "Ethereum",
         }
-        return outputs
-    }
-
-    // Generate random price
-    const price = generateRandomPrice(token)
-
-    // Check if price limit is satisfied
-    const isPriceLimitSatisfied =
-        priceLimit === 0 || (action === "Buy" && price <= priceLimit) || (action === "Sell" && price >= priceLimit)
-
-    if (!isPriceLimitSatisfied) {
+    } else {
+        // No wallet connected
         outputs["status"] = "failed"
-        outputs["transactionId"] = null
-        outputs["details"] = {
-            error: `Price limit not satisfied. Current price: $${ price }, Limit: $${ priceLimit }`,
-            timestamp: new Date().toISOString(),
-        }
-        return outputs
+        outputs["error"] = "No wallet connected. Please connect a wallet first."
     }
 
-    // Simulate successful transaction
-    outputs["status"] = "completed"
-    outputs["transactionId"] = generateRandomTxId(walletInfo.network)
-    outputs["details"] = {
-        action,
-        token,
-        amount,
-        price,
-        total: price * amount,
-        timestamp: new Date().toISOString(),
-        fee: (price * amount * 0.001).toFixed(4),
-        wallet: walletInfo.address,
-    }
-
-    // Add swap details if applicable
-    if (action === "Swap") {
-        const targetPrice = generateRandomPrice(targetToken)
-        const targetAmount = (amount * price) / targetPrice
-        outputs["details"] = {
-            ...outputs["details"],
-            targetToken,
-            targetAmount,
-            targetPrice,
-            exchangeRate: `1 ${ token } = ${ (price / targetPrice).toFixed(6) } ${ targetToken }`,
-        }
-    }
+    // Always pass through wallet info for downstream nodes
+    outputs["walletInfo"] = walletInfo
 
     return outputs
 }
 
-// Simulate AI trading bot
+// Update the simulateTradingBot function to better handle wallet info
 export function simulateTradingBot(data: any, inputValues: Record<string, any>) {
     const outputs: Record<string, any> = {}
 
-    // Get wallet info from input or node configuration
-    const walletInfo = inputValues["walletInfo"] || data.inputs?.find((input: any) => input.key === "walletInfo")?.value
+    // Get wallet info from input or node configuration with enhanced extraction
+    let walletInfo = null
+
+    if (inputValues["walletInfo"]) {
+        walletInfo = inputValues["walletInfo"]
+    } else if (data.inputs?.find((input: any) => input.key === "walletInfo")?.value) {
+        walletInfo = data.inputs.find((input: any) => input.key === "walletInfo").value
+    }
+
+    // Handle nested wallet info
+    if (walletInfo && typeof walletInfo === "object") {
+        if (walletInfo.walletInfo) {
+            walletInfo = walletInfo.walletInfo
+        }
+    }
+
+    // Check if wallet is connected with improved check
+    const isWalletConnected = walletInfo && (walletInfo.connected === true || walletInfo.address)
 
     // Get trading parameters
     const strategy = data.inputs?.find((input: any) => input.key === "strategy")?.value || "Balanced"
@@ -125,7 +170,7 @@ export function simulateTradingBot(data: any, inputValues: Record<string, any>) 
     const timeframe = data.inputs?.find((input: any) => input.key === "timeframe")?.value || "4h"
 
     // Check if wallet is connected
-    if (!walletInfo) {
+    if (!isWalletConnected) {
         outputs["recommendation"] = {
             action: "none",
             token: "N/A",
@@ -224,6 +269,9 @@ export function simulateTradingBot(data: any, inputValues: Record<string, any>) 
         successfulTrades: Math.floor(Math.random() * 30) + 5,
         averageReturn: (profit / 10).toFixed(2),
     }
+
+    // Always pass through wallet info for downstream nodes
+    outputs["walletInfo"] = walletInfo
 
     return outputs
 }

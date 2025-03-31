@@ -186,6 +186,182 @@ export default function NodeSidebar({ node, onClose, updateNodeData }: NodeSideb
                     </div>
                 </>
             )}
+
+            {/* Add Wallet Info Section for Crypto Wallet nodes */}
+            {nodeData.name === "Crypto Wallet" && nodeData.outputData?.connected && (
+                <>
+                    <Separator className="my-4" />
+                    <div className="space-y-4">
+                        <h4 className="font-medium">Wallet Information</h4>
+                        <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-md border">
+                            <div className="flex flex-col space-y-2">
+                                <div className="flex justify-between">
+                                    <span className="text-sm font-medium">Status:</span>
+                                    <span className="text-sm px-2 py-0.5 rounded bg-green-100 text-green-700">Connected</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-sm font-medium">Network:</span>
+                                    <span className="text-sm">{nodeData.outputData?.walletInfo?.network || "Ethereum"}</span>
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-sm font-medium">Address:</span>
+                                    <span className="text-xs font-mono mt-1 break-all">
+                                        {nodeData.outputData?.walletInfo?.address || "Not connected"}
+                                    </span>
+                                </div>
+                                {nodeData.outputData?.balance && (
+                                    <div className="flex justify-between">
+                                        <span className="text-sm font-medium">Balance:</span>
+                                        <span className="text-sm">
+                                            {nodeData.outputData.balance} {nodeData.outputData?.walletInfo?.currency || "ETH"}
+                                        </span>
+                                    </div>
+                                )}
+                                <div className="flex justify-between">
+                                    <span className="text-sm font-medium">Connection Type:</span>
+                                    <span className="text-sm">{nodeData.outputData?.walletInfo?.connectionType || "Unknown"}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </>
+            )}
+
+            {nodeData.name === "Trading Bot" && nodeData.outputData?.recommendation && (
+                <>
+                    <Separator className="my-4" />
+                    <div className="space-y-4">
+                        <h4 className="font-medium">Trading Bot Analysis</h4>
+                        <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-md border">
+                            <div className="flex flex-col space-y-2">
+                                <div className="flex justify-between">
+                                    <span className="text-sm font-medium">Recommendation:</span>
+                                    <span
+                                        className={`text-sm px-2 py-0.5 rounded ${ nodeData.outputData.recommendation.action === "buy"
+                                            ? "bg-green-100 text-green-700"
+                                            : nodeData.outputData.recommendation.action === "sell"
+                                                ? "bg-red-100 text-red-700"
+                                                : "bg-blue-100 text-blue-700"
+                                            }`}
+                                    >
+                                        {nodeData.outputData.recommendation.action === "buy"
+                                            ? "Buy"
+                                            : nodeData.outputData.recommendation.action === "sell"
+                                                ? "Sell"
+                                                : "Hold"}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-sm font-medium">Token:</span>
+                                    <span className="text-sm">{nodeData.outputData.recommendation.token}</span>
+                                </div>
+                                {nodeData.outputData.recommendation.amount && (
+                                    <div className="flex justify-between">
+                                        <span className="text-sm font-medium">Amount:</span>
+                                        <span className="text-sm">{nodeData.outputData.recommendation.amount}</span>
+                                    </div>
+                                )}
+                                {nodeData.outputData.recommendation.price && (
+                                    <div className="flex justify-between">
+                                        <span className="text-sm font-medium">Price:</span>
+                                        <span className="text-sm">${nodeData.outputData.recommendation.price.toFixed(2)}</span>
+                                    </div>
+                                )}
+                                <div className="text-xs mt-2 text-gray-600">{nodeData.outputData.recommendation.reason}</div>
+                            </div>
+
+                            {nodeData.outputData.performance && (
+                                <div className="mt-3 pt-3 border-t border-gray-200">
+                                    <div className="text-sm font-medium mb-2">Performance Metrics</div>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div className="flex justify-between">
+                                            <span className="text-xs">Win Rate:</span>
+                                            <span
+                                                className={`text-xs ${ Number.parseFloat(nodeData.outputData.performance.winRate) > 50
+                                                    ? "text-green-600"
+                                                    : "text-red-600"
+                                                    }`}
+                                            >
+                                                {nodeData.outputData.performance.winRate}%
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-xs">Profit:</span>
+                                            <span
+                                                className={`text-xs ${ Number.parseFloat(nodeData.outputData.performance.profit) > 0
+                                                    ? "text-green-600"
+                                                    : "text-red-600"
+                                                    }`}
+                                            >
+                                                {Number.parseFloat(nodeData.outputData.performance.profit) > 0 ? "+" : ""}
+                                                {nodeData.outputData.performance.profit}%
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </>
+            )}
+
+            {/* Add Crypto Trade Section for Crypto Trade nodes */}
+            {nodeData.name === "Crypto Trade" && nodeData.outputData?.status && (
+                <>
+                    <Separator className="my-4" />
+                    <div className="space-y-4">
+                        <h4 className="font-medium">Trade Information</h4>
+                        <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-md border">
+                            <div className="flex flex-col space-y-2">
+                                <div className="flex justify-between">
+                                    <span className="text-sm font-medium">Status:</span>
+                                    <span
+                                        className={`text-sm px-2 py-0.5 rounded ${ nodeData.outputData.status === "completed"
+                                            ? "bg-green-100 text-green-700"
+                                            : nodeData.outputData.status === "pending"
+                                                ? "bg-yellow-100 text-yellow-700"
+                                                : "bg-red-100 text-red-700"
+                                            }`}
+                                    >
+                                        {nodeData.outputData.status.charAt(0).toUpperCase() + nodeData.outputData.status.slice(1)}
+                                    </span>
+                                </div>
+
+                                {nodeData.outputData.details && (
+                                    <>
+                                        <div className="flex justify-between">
+                                            <span className="text-sm font-medium">Action:</span>
+                                            <span className="text-sm">{nodeData.outputData.details.action}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-sm font-medium">Token:</span>
+                                            <span className="text-sm">{nodeData.outputData.details.token}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-sm font-medium">Amount:</span>
+                                            <span className="text-sm">{nodeData.outputData.details.amount}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-sm font-medium">Price:</span>
+                                            <span className="text-sm">${nodeData.outputData.details.price}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-sm font-medium">Total:</span>
+                                            <span className="text-sm">${nodeData.outputData.details.total.toFixed(2)}</span>
+                                        </div>
+                                    </>
+                                )}
+
+                                {nodeData.outputData.transactionId && (
+                                    <div className="text-xs mt-2 font-mono break-all">
+                                        <span className="font-medium">TX ID:</span> {nodeData.outputData.transactionId}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </>
+            )}
         </div>
     )
 }

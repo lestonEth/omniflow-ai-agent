@@ -55,8 +55,11 @@ export const FlowProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             if (!node) return
 
             try {
+                console.log(`Starting cascade execution for node: ${ nodeId } (${ node.data.name })`)
+
                 // Execute the current node
                 const result = await simulateNode(node, nodes, edges)
+                console.log(`Execution result for node ${ nodeId }:`, result)
 
                 // Update the current node with execution results
                 setNodes((currentNodes) =>
@@ -77,6 +80,7 @@ export const FlowProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
                 // Find all downstream nodes that need to be updated
                 const updatedNodeIds = propagateOutputToConnectedNodes(nodeId, result.outputData, nodes, edges)
+                console.log(`Nodes to update after ${ nodeId } execution:`, updatedNodeIds)
 
                 // Execute each downstream node in sequence
                 for (const targetNodeId of updatedNodeIds) {

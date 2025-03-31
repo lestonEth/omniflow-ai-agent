@@ -35,18 +35,66 @@ const CryptoWalletNode: React.FC<CryptoWalletNodeProps> = ({ data, isConnectable
         }
     }, [])
 
-    // Handle successful wallet connection
+    // Update the handleWalletConnected function to ensure proper data structure
     const handleWalletConnected = (walletInfo: any) => {
         // Update node data with wallet info
         console.log("Wallet connected:", walletInfo)
         if (data.onUpdateNodeData) {
-            data.onUpdateNodeData(id, {
-                outputData: {
-                    connected: true,
-                    walletInfo: walletInfo,
-                    balance: walletInfo.balance || "0",
+            // Create a properly structured output that can be consumed by other nodes
+            const outputData = {
+                connected: true,
+                walletInfo: {
+                    address: walletInfo.address || "",
+                    network: walletInfo.network || "Ethereum",
+                    chainId: walletInfo.chainId || 1,
+                    currency: walletInfo.currency || "ETH",
+                    connectionType: walletInfo.connectionType || "MetaMask",
+                    lastUpdated: new Date().toISOString(),
                 },
+                balance: walletInfo.balance || "0",
+            }
+
+            // Log the exact data structure being created
+            console.log("Creating wallet output data:", outputData)
+
+            // Update the node data with the wallet info
+            data.onUpdateNodeData(id, {
+                ...data,
+                outputData,
+                // Add wallet info to inputs so it's visible in the sidebar
+                inputs: data.inputs?.map((input: any) => {
+                    if (input.key === "walletAddress") {
+                        return {
+                            ...input,
+                            value: walletInfo.address || input.value,
+                        }
+                    }
+                    if (input.key === "network") {
+                        return {
+                            ...input,
+                            value: walletInfo.network || input.value,
+                        }
+                    }
+                    return input
+                }),
             })
+
+            // Force a second update to ensure the data is properly propagated
+            setTimeout(() => {
+                // Log successful connection to console output
+                const consoleOutput = [...(data.consoleOutput || [])]
+                consoleOutput.push(
+                    `[${ new Date().toLocaleTimeString() }] Wallet connected: ${ walletInfo.address } on ${ walletInfo.network }`,
+                )
+                data.onUpdateNodeData(id, {
+                    ...data,
+                    consoleOutput,
+                    outputData: {
+                        ...outputData,
+                        connected: true, // Ensure connected flag is set
+                    },
+                })
+            }, 100)
         }
     }
 

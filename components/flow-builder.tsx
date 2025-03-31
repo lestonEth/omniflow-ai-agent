@@ -57,6 +57,7 @@ export default function FlowBuilder() {
         event.dataTransfer.dropEffect = "move"
     }, [])
 
+    // Update the handleNodePlayPause function to better handle node execution
     const handleNodePlayPause = useCallback(
         (nodeId: string) => {
             setNodes((nds) =>
@@ -75,6 +76,7 @@ export default function FlowBuilder() {
                             // We'll run the simulation in the next tick
                             setTimeout(async () => {
                                 try {
+                                    console.log(`Starting simulation for node ${ nodeId } (${ node.data.name })`)
                                     // Use cascadeNodeExecution to trigger updates to downstream nodes
                                     await cascadeNodeExecution(nodeId)
                                 } catch (error) {

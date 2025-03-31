@@ -10,9 +10,32 @@ interface TradingBotNodeProps {
     id: string
 }
 
+// Update the component to better handle input from wallet node
 const TradingBotNode: React.FC<TradingBotNodeProps> = ({ data, isConnectable, selected, id }) => {
     // Get trading strategy
     const strategy = data.inputs?.find((input: any) => input.key === "strategy")?.value || "Balanced"
+
+    // Get wallet info from inputs or from connected nodes via outputData
+    const walletInfo =
+        data.inputs?.find((input: any) => input.key === "walletInfo")?.value ||
+        (data.outputData?.walletInfo ? data.outputData.walletInfo : null)
+
+    // Log the wallet info for debugging
+    console.log("Trading Bot Node - Wallet Info:", walletInfo)
+
+    // More flexible check for wallet connection
+    const isWalletConnected = Boolean(
+        walletInfo &&
+        (walletInfo.connected === true ||
+            walletInfo.address ||
+            (typeof walletInfo === "object" && Object.keys(walletInfo).length > 0)),
+    )
+
+    // Log the connection status
+    console.log("Trading Bot Node - Wallet Connected:", isWalletConnected)
+
+    // Get tokens to trade
+    const tokens = data.inputs?.find((input: any) => input.key === "tokens")?.value || ["ETH", "BTC"]
 
     return (
         <div
@@ -54,6 +77,30 @@ const TradingBotNode: React.FC<TradingBotNodeProps> = ({ data, isConnectable, se
 
             <div className="font-medium text-sm mt-6">{data.name}</div>
             <div className="text-xs text-gray-500 mb-2">{data.description}</div>
+
+            {/* Wallet connection status indicator */}
+            {isWalletConnected ? (
+                <div className="text-xs mb-2 px-2 py-1 bg-green-100 text-green-700 rounded flex items-center">
+                    <div className="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
+                    Wallet connected: {walletInfo.network || "Ethereum"}
+                </div>
+            ) : (
+                <div className="text-xs mb-2 px-2 py-1 bg-yellow-100 text-yellow-700 rounded flex items-center">
+                    <div className="w-2 h-2 bg-yellow-500 rounded-full mr-1"></div>
+                    No wallet connected
+                </div>
+            )}
+
+            {/* Tokens display */}
+            {Array.isArray(tokens) && tokens.length > 0 && (
+                <div className="flex flex-wrap gap-1 mb-2">
+                    {tokens.map((token, index) => (
+                        <span key={index} className="text-xs px-1.5 py-0.5 bg-indigo-100 text-indigo-700 rounded">
+                            {token}
+                        </span>
+                    ))}
+                </div>
+            )}
 
             {/* Input Handles */}
             {data.inputs?.map((input: any, index: number) => (
@@ -123,6 +170,22 @@ const TradingBotNode: React.FC<TradingBotNodeProps> = ({ data, isConnectable, se
                                     {data.outputData.performance.profit > 0 ? "+" : ""}
                                     {data.outputData.performance.profit}%
                                 </span>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Display wallet info if available */}
+                    {isWalletConnected && (
+                        <div className="text-xs border-t pt-1 mt-1">
+                            <div className="flex justify-between">
+                                <span>Wallet:</span>
+                                <span className="font-mono">
+                                    {walletInfo.address.substring(0, 6)}...{walletInfo.address.substring(walletInfo.address.length - 4)}
+                                </span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span>Network:</span>
+                                <span>{walletInfo.network || "Ethereum"}</span>
                             </div>
                         </div>
                     )}

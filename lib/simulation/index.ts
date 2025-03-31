@@ -94,12 +94,18 @@ export async function simulateNode(node: any, nodes: any[], edges: any[]) {
     }
 }
 
-// Get input values from connected nodes
+// Update the getInputValues function to better handle complex data structures
+// Enhance the getInputValues function to better handle crypto node specific data
 export function getInputValues(nodeId: string, nodes: any[], edges: any[]) {
     const inputValues: Record<string, any> = {}
 
+    // Find the target node for debugging
+    const targetNode = nodes.find((node) => node.id === nodeId)
+    console.log(`Getting input values for node: ${ nodeId } (${ targetNode?.data?.name || "unknown" })`)
+
     // Find all edges that connect to this node
     const incomingEdges = edges.filter((edge) => edge.target === nodeId)
+    console.log(`Found ${ incomingEdges.length } incoming edges for node ${ nodeId }`)
 
     // Process each incoming edge
     incomingEdges.forEach((edge) => {
@@ -107,34 +113,76 @@ export function getInputValues(nodeId: string, nodes: any[], edges: any[]) {
         const sourceNode = nodes.find((node) => node.id === edge.source)
 
         if (sourceNode) {
-            // Get the specific output from the source node based on the sourceHandle
-            let outputValue
+            console.log(
+                `Processing edge from ${ sourceNode.data.name } (${ edge.source }) to ${ targetNode?.data?.name || "unknown" } (${ nodeId })`,
+            )
+            console.log(`Source node output data:`, sourceNode.data.outputData)
 
-            // Check if the source node has outputData
             if (sourceNode.data.outputData) {
-                // Try to get the specific output value using the sourceHandle
+                // Get the specific output from the source node based on the sourceHandle
+                let outputValue
+
+                // First check the direct mapping based on sourceHandle
                 if (edge.sourceHandle && sourceNode.data.outputData[edge.sourceHandle] !== undefined) {
                     outputValue = sourceNode.data.outputData[edge.sourceHandle]
+                    console.log(`Found direct output value for handle ${ edge.sourceHandle }:`, outputValue)
                 }
-                // If no specific handle or value not found, try to get the first output
+                // Special handling for crypto wallet info
+                else if (edge.targetHandle === "walletInfo") {
+                    console.log(`Processing wallet info for target handle ${ edge.targetHandle }`)
+
+                    // Check if source node is a crypto wallet
+                    if (sourceNode.type === "crypto_wallet" || sourceNode.data.name === "Crypto Wallet") {
+                        console.log(`Source is a Crypto Wallet node`)
+
+                        // Direct access to the entire outputData for wallet nodes
+                        outputValue = sourceNode.data.outputData
+                        console.log(`Using entire wallet node output data:`, outputValue)
+                    }
+                    // Look for walletInfo in various places in the output structure
+                    else if (sourceNode.data.outputData.walletInfo) {
+                        outputValue = sourceNode.data.outputData.walletInfo
+                        console.log(`Found walletInfo in output data:`, outputValue)
+                    } else if (sourceNode.data.outputData.connected === true) {
+                        // If the wallet is connected but walletInfo is not directly accessible
+                        outputValue = {
+                            ...sourceNode.data.outputData,
+                            connected: true,
+                        }
+                        console.log(`Created walletInfo from connected status:`, outputValue)
+                    }
+
+                    // Add connected status to the wallet info if it exists
+                    if (outputValue && !outputValue.connected && sourceNode.data.outputData.connected) {
+                        outputValue.connected = sourceNode.data.outputData.connected
+                        console.log(`Added connected status to walletInfo:`, outputValue)
+                    }
+                }
+                // Special handling for recommendation data
+                else if (edge.targetHandle === "recommendation") {
+                    if (sourceNode.data.outputData.recommendation) {
+                        outputValue = sourceNode.data.outputData.recommendation
+                        console.log(`Found recommendation data:`, outputValue)
+                    }
+                }
+                // If no specific match, try to get an appropriate value
                 else if (Object.keys(sourceNode.data.outputData).length > 0) {
                     // Get the first non-internal output (not starting with _)
                     const firstOutputKey = Object.keys(sourceNode.data.outputData).find((key) => !key.startsWith("_"))
 
                     if (firstOutputKey) {
                         outputValue = sourceNode.data.outputData[firstOutputKey]
+                        console.log(`Using first available output key ${ firstOutputKey }:`, outputValue)
                     }
                 }
-            }
 
-            // If we found a value and have a target handle, assign it
-            if (outputValue !== undefined && edge.targetHandle) {
-                inputValues[edge.targetHandle] = outputValue
-
-                // Log successful connection for debugging
-                console.log(
-                    `Connected: ${ sourceNode.id } (${ edge.sourceHandle || "default" }) -> ${ nodeId } (${ edge.targetHandle })`,
-                )
+                // If we found a value and have a target handle, assign it
+                if (outputValue !== undefined && edge.targetHandle) {
+                    inputValues[edge.targetHandle] = outputValue
+                    console.log(`Set input value for ${ edge.targetHandle }:`, outputValue)
+                }
+            } else {
+                console.log(`Source node ${ sourceNode.data.name } has no output data`)
             }
         }
     })
@@ -146,10 +194,12 @@ export function getInputValues(nodeId: string, nodes: any[], edges: any[]) {
             // Only use the node's input value if not already set by a connection
             if (input.key && input.value !== undefined && inputValues[input.key] === undefined) {
                 inputValues[input.key] = input.value
+                console.log(`Using node's own input value for ${ input.key }:`, input.value)
             }
         })
     }
 
+    console.log(`Final input values for node ${ nodeId }:`, inputValues)
     return inputValues
 }
 

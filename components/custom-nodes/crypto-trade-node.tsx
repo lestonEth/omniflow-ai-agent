@@ -10,12 +10,38 @@ interface CryptoTradeNodeProps {
     id: string
 }
 
+// Update the component to better handle input from wallet node
 const CryptoTradeNode: React.FC<CryptoTradeNodeProps> = ({ data, isConnectable, selected, id }) => {
     // Get trade action
     const action = data.inputs?.find((input: any) => input.key === "action")?.value || "Buy"
 
+    // Get wallet info from inputs or from connected nodes via outputData
+    const walletInfo =
+        data.inputs?.find((input: any) => input.key === "walletInfo")?.value ||
+        (data.outputData?.walletInfo ? data.outputData.walletInfo : null)
+
+    // Log the wallet info for debugging
+    console.log("Crypto Trade Node - Wallet Info:", walletInfo)
+
+    // More flexible check for wallet connection
+    const isWalletConnected = Boolean(
+        walletInfo &&
+        (walletInfo.connected === true ||
+            walletInfo.address ||
+            (typeof walletInfo === "object" && Object.keys(walletInfo).length > 0)),
+    )
+
+    // Log the connection status
+    console.log("Crypto Trade Node - Wallet Connected:", isWalletConnected)
+
     // Get icon based on action
     const ActionIcon = action === "Buy" ? ArrowUpRight : action === "Sell" ? ArrowDownRight : ArrowUpDown
+
+    // Get token from inputs
+    const token = data.inputs?.find((input: any) => input.key === "token")?.value || "ETH"
+
+    // Get amount from inputs
+    const amount = data.inputs?.find((input: any) => input.key === "amount")?.value || 0.1
 
     return (
         <div
@@ -52,6 +78,19 @@ const CryptoTradeNode: React.FC<CryptoTradeNodeProps> = ({ data, isConnectable, 
 
             <div className="font-medium text-sm mt-6">{data.name}</div>
             <div className="text-xs text-gray-500 mb-2">{data.description}</div>
+
+            {/* Wallet connection status indicator */}
+            {isWalletConnected ? (
+                <div className="text-xs mb-2 px-2 py-1 bg-green-100 text-green-700 rounded flex items-center">
+                    <div className="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
+                    Wallet connected
+                </div>
+            ) : (
+                <div className="text-xs mb-2 px-2 py-1 bg-yellow-100 text-yellow-700 rounded flex items-center">
+                    <div className="w-2 h-2 bg-yellow-500 rounded-full mr-1"></div>
+                    No wallet connected
+                </div>
+            )}
 
             {/* Input Handles */}
             {data.inputs?.map((input: any, index: number) => (
@@ -98,13 +137,19 @@ const CryptoTradeNode: React.FC<CryptoTradeNodeProps> = ({ data, isConnectable, 
                         </span>
                     </div>
                     <div className="text-sm font-medium">
-                        {action} {data.outputData.details?.amount || "0"} {data.outputData.details?.token || "ETH"}
+                        {action} {data.outputData.details?.amount || amount} {data.outputData.details?.token || token}
                     </div>
                     {data.outputData.details?.price && (
                         <div className="text-xs text-gray-500 mt-1">Price: ${data.outputData.details.price}</div>
                     )}
                     {data.outputData.transactionId && (
                         <div className="text-xs text-gray-500 mt-1">TX: {formatTxId(data.outputData.transactionId)}</div>
+                    )}
+                    {/* Display wallet info if available */}
+                    {isWalletConnected && (
+                        <div className="text-xs text-gray-500 mt-1 pt-1 border-t border-gray-200">
+                            Wallet: {formatTxId(walletInfo.address)} ({walletInfo.network || "Ethereum"})
+                        </div>
                     )}
                 </div>
             )}
