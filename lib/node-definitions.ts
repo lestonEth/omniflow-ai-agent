@@ -240,7 +240,7 @@ export const nodeDefinitions = [
                 key: "network",
                 label: "Network",
                 type: "select",
-                options: ["Ethereum", "Binance Smart Chain", "Polygon", "Solana"],
+                options: ["Hedeara", "Ethereum", "Binance Smart Chain", "Polygon", "Solana"],
                 value: "Ethereum",
             },
         ],
