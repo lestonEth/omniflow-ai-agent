@@ -1,4 +1,4 @@
-// Export all simulation functions and utilities
+// Add crypto node simulators to the simulation logic
 import type { Edge, Node } from "@xyflow/react"
 
 // Helper function to generate a timestamp for console logs
@@ -32,34 +32,43 @@ export async function simulateNode(node: any, nodes: any[], edges: any[]) {
         // Process based on node type
         switch (type) {
             case "input":
-                if (data.name === "WhatsApp Input") {
-                    const { simulateWhatsAppInput } = await import("./whatsapp-node-simulator")
-                    outputData = simulateWhatsAppInput(data)
-                } else {
-                    const { simulateInputNode } = await import("./input-node-simulator")
-                    outputData = simulateInputNode(data)
-                }
+                const { simulateInputNode } = await import("@/lib/simulation/input-node-simulator")
+                outputData = simulateInputNode(data)
                 break
             case "processing":
-                const { simulateProcessingNode } = await import("./processing-node-simulator")
-                outputData = await simulateProcessingNode(data, inputValues, consoleOutput)
+                if (data.name === "Text Processor") {
+                    const { simulateProcessingNode } = await import("@/lib/simulation/processing-node-simulator")
+                    outputData = await simulateProcessingNode(data, inputValues, consoleOutput)
+                } else if (data.name === "Data Transformer") {
+                    const { simulateProcessingNode } = await import("@/lib/simulation/processing-node-simulator")
+                    outputData = await simulateProcessingNode(data, inputValues, consoleOutput)
+                } else if (data.name === "Crypto Wallet") {
+                    const { simulateCryptoWallet } = await import("@/lib/simulation/crypto-node-simulator")
+                    outputData = simulateCryptoWallet(data)
+                } else if (data.name === "Trading Bot") {
+                    const { simulateTradingBot } = await import("@/lib/simulation/crypto-node-simulator")
+                    outputData = simulateTradingBot(data, inputValues)
+                } else {
+                    const { simulateProcessingNode } = await import("@/lib/simulation/processing-node-simulator")
+                    outputData = await simulateProcessingNode(data, inputValues, consoleOutput)
+                }
                 break
             case "action":
-                const { simulateActionNode } = await import("./action-node-simulator")
-                outputData = await simulateActionNode(data, inputValues)
+                if (data.name === "Crypto Trade") {
+                    const { simulateCryptoTrade } = await import("@/lib/simulation/crypto-node-simulator")
+                    outputData = simulateCryptoTrade(data, inputValues)
+                } else {
+                    const { simulateActionNode } = await import("@/lib/simulation/action-node-simulator")
+                    outputData = await simulateActionNode(data, inputValues)
+                }
                 break
             case "condition":
                 const { simulateConditionNode } = await import("./condition-node-simulator")
                 outputData = simulateConditionNode(data, inputValues)
                 break
             case "output":
-                if (data.name === "WhatsApp Output") {
-                    const { simulateWhatsAppOutput } = await import("./whatsapp-node-simulator")
-                    outputData = await simulateWhatsAppOutput(data, inputValues, consoleOutput)
-                } else {
-                    const { simulateOutputNode } = await import("./output-node-simulator")
-                    outputData = simulateOutputNode(data, inputValues)
-                }
+                const { simulateOutputNode } = await import("@/lib/simulation//output-node-simulator")
+                outputData = simulateOutputNode(data, inputValues)
                 break
             default:
                 consoleOutput.push(`${ timestamp() } Unknown node type: ${ type }`)
@@ -97,15 +106,35 @@ export function getInputValues(nodeId: string, nodes: any[], edges: any[]) {
         // Find the source node
         const sourceNode = nodes.find((node) => node.id === edge.source)
 
-        if (sourceNode && sourceNode.data.outputData) {
+        if (sourceNode) {
             // Get the specific output from the source node based on the sourceHandle
-            const outputValue = edge.sourceHandle
-                ? sourceNode.data.outputData[edge.sourceHandle]
-                : Object.values(sourceNode.data.outputData)[0] // Default to first output if handle not specified
+            let outputValue
 
-            if (outputValue !== undefined) {
-                // Map to the target input handle
-                inputValues[edge.targetHandle || "default"] = outputValue
+            // Check if the source node has outputData
+            if (sourceNode.data.outputData) {
+                // Try to get the specific output value using the sourceHandle
+                if (edge.sourceHandle && sourceNode.data.outputData[edge.sourceHandle] !== undefined) {
+                    outputValue = sourceNode.data.outputData[edge.sourceHandle]
+                }
+                // If no specific handle or value not found, try to get the first output
+                else if (Object.keys(sourceNode.data.outputData).length > 0) {
+                    // Get the first non-internal output (not starting with _)
+                    const firstOutputKey = Object.keys(sourceNode.data.outputData).find((key) => !key.startsWith("_"))
+
+                    if (firstOutputKey) {
+                        outputValue = sourceNode.data.outputData[firstOutputKey]
+                    }
+                }
+            }
+
+            // If we found a value and have a target handle, assign it
+            if (outputValue !== undefined && edge.targetHandle) {
+                inputValues[edge.targetHandle] = outputValue
+
+                // Log successful connection for debugging
+                console.log(
+                    `Connected: ${ sourceNode.id } (${ edge.sourceHandle || "default" }) -> ${ nodeId } (${ edge.targetHandle })`,
+                )
             }
         }
     })
@@ -124,7 +153,7 @@ export function getInputValues(nodeId: string, nodes: any[], edges: any[]) {
     return inputValues
 }
 
-// Propagate output data to connected nodes
+// Improve propagation of output data to connected nodes
 export function propagateOutputToConnectedNodes(nodeId: string, outputData: any, nodes: Node[], edges: Edge[]) {
     // Find all edges that start from this node
     const outgoingEdges = edges.filter((edge) => edge.source === nodeId)
@@ -133,11 +162,27 @@ export function propagateOutputToConnectedNodes(nodeId: string, outputData: any,
     // For each outgoing edge, update the target node's input
     outgoingEdges.forEach((edge) => {
         const targetNode = nodes.find((node) => node.id === edge.target)
-        if (targetNode && edge.sourceHandle && edge.targetHandle) {
-            // Get the output data from the source node
-            const outputValue = outputData[edge.sourceHandle]
 
-            if (outputValue !== undefined) {
+        if (targetNode) {
+            // Get the output data from the source node
+            let outputValue
+
+            // Try to get the specific output value using the sourceHandle
+            if (edge.sourceHandle && outputData[edge.sourceHandle] !== undefined) {
+                outputValue = outputData[edge.sourceHandle]
+            }
+            // If no specific handle or value not found, try to get the first output
+            else if (Object.keys(outputData).length > 0) {
+                // Get the first non-internal output (not starting with _)
+                const firstOutputKey = Object.keys(outputData).find((key) => !key.startsWith("_"))
+
+                if (firstOutputKey) {
+                    outputValue = outputData[firstOutputKey]
+                }
+            }
+
+            // If we found a value and have a target handle, update the target node
+            if (outputValue !== undefined && edge.targetHandle) {
                 // Find the input in the target node that corresponds to the target handle
                 const targetInputs = [...((targetNode.data.inputs as any) || [])]
                 const inputIndex = targetInputs.findIndex((input) => input.key === edge.targetHandle)
@@ -157,6 +202,11 @@ export function propagateOutputToConnectedNodes(nodeId: string, outputData: any,
 
                     // Add the target node ID to the list of updated nodes
                     updatedNodeIds.push(targetNode.id)
+
+                    // Log successful propagation for debugging
+                    console.log(
+                        `Propagated: ${ nodeId } (${ edge.sourceHandle || "default" }) -> ${ targetNode.id } (${ edge.targetHandle })`,
+                    )
                 }
             }
         }
@@ -165,8 +215,10 @@ export function propagateOutputToConnectedNodes(nodeId: string, outputData: any,
     return updatedNodeIds
 }
 
-export * from "./action-node-simulator"
-export * from "./condition-node-simulator"
-export * from "./input-node-simulator"
-export * from "./output-node-simulator"
-export * from "./processing-node-simulator"
+export * from "@/lib/simulation/action-node-simulator"
+export * from "@/lib/simulation/condition-node-simulator"
+export * from "@/lib/simulation/input-node-simulator"
+export * from "@/lib/simulation/output-node-simulator"
+export * from "@/lib/simulation/processing-node-simulator"
+export * from "@/lib/simulation/crypto-node-simulator"
+

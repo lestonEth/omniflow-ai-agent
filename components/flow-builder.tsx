@@ -7,7 +7,7 @@ import { ReactFlow, ReactFlowProvider, Background, Controls, MiniMap, type Node,
 import "@xyflow/react/dist/style.css"
 
 import { Button } from "@/components/ui/button"
-import { Play, Pause, Plus, Save, Upload, Key, MessageSquare } from "lucide-react"
+import { Play, Pause, Plus, Save, Upload, Key } from "lucide-react"
 import NodeLibrary from "@/components/node-library"
 import NodeSidebar from "@/components/node-sidebar"
 import NodeConsoleModal from "@/components/node-console-modal"
@@ -16,7 +16,6 @@ import { nodeTypes } from "@/lib/node-types"
 import { useToast } from "@/components/ui/use-toast"
 import { GeminiService } from "@/lib/services/gemini-service"
 import { AIServiceFactory } from "@/lib/services/ai-service"
-import WhatsAppConfigModal from "@/components/whatsapp-config-modal"
 import FlowConsole from "@/components/flow-console"
 
 import { useFlow, useSimulation } from "@/contexts"
@@ -27,7 +26,6 @@ export default function FlowBuilder() {
     const [isLibraryOpen, setIsLibraryOpen] = useState(false)
     const [consoleNode, setConsoleNode] = useState<Node | null>(null)
     const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false)
-    const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false)
     const { toast } = useToast()
 
     // hooks and context states
@@ -59,65 +57,6 @@ export default function FlowBuilder() {
         event.dataTransfer.dropEffect = "move"
     }, [])
 
-    const onDrop = useCallback(
-        (event: React.DragEvent<HTMLDivElement>) => {
-            event.preventDefault()
-
-            const reactFlowBounds = reactFlowWrapper.current?.getBoundingClientRect()
-            const type = event.dataTransfer.getData("application/reactflow")
-
-            // Check if the dropped element is valid
-            if (typeof type === "undefined" || !type || !reactFlowBounds || !reactFlowInstance) {
-                return
-            }
-
-            const position = reactFlowInstance.screenToFlowPosition({
-                x: event.clientX - reactFlowBounds.left,
-                y: event.clientY - reactFlowBounds.top,
-            })
-
-            const nodeData = JSON.parse(event.dataTransfer.getData("application/nodeData"))
-
-            // Add node control handlers and state
-            const enhancedNodeData = {
-                ...nodeData,
-                isActive: true,
-                isPlaying: false,
-                consoleOutput: [],
-                outputData: null,
-                executionStatus: null,
-                onPlayPause: handleNodePlayPause,
-                onToggleActive: handleNodeToggleActive,
-                onOpenConsole: handleOpenNodeConsole,
-                onDeleteNode: handleDeleteNode,
-            }
-
-            const newNode = {
-                id: `${ type }-${ Date.now() }`,
-                type,
-                position,
-                data: enhancedNodeData,
-            }
-
-            setNodes((nds) => nds.concat(newNode))
-        },
-        [reactFlowInstance, setNodes],
-    )
-
-    const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
-        setSelectedNode(node)
-    }, [])
-
-    // Clean up interval on unmount
-    useEffect(() => {
-        return () => {
-            if (simulationIntervalRef.current) {
-                clearInterval(simulationIntervalRef.current)
-            }
-        }
-    }, [])
-
-    // Node control handlers
     const handleNodePlayPause = useCallback(
         (nodeId: string) => {
             setNodes((nds) =>
@@ -228,6 +167,73 @@ export default function FlowBuilder() {
         [setNodes, setEdges, selectedNode, consoleNode, toast],
     )
 
+    const onDrop = useCallback(
+        (event: React.DragEvent<HTMLDivElement>) => {
+            event.preventDefault()
+
+            const reactFlowBounds = reactFlowWrapper.current?.getBoundingClientRect()
+            const type = event.dataTransfer.getData("application/reactflow")
+
+            // Check if the dropped element is valid
+            if (typeof type === "undefined" || !type || !reactFlowBounds || !reactFlowInstance) {
+                return
+            }
+
+            const position = reactFlowInstance.screenToFlowPosition({
+                x: event.clientX - reactFlowBounds.left,
+                y: event.clientY - reactFlowBounds.top,
+            })
+
+            const nodeData = JSON.parse(event.dataTransfer.getData("application/nodeData"))
+
+            // Add node control handlers and state
+            const enhancedNodeData = {
+                ...nodeData,
+                isActive: true,
+                isPlaying: false,
+                consoleOutput: [],
+                outputData: null,
+                executionStatus: null,
+                onPlayPause: handleNodePlayPause,
+                onToggleActive: handleNodeToggleActive,
+                onOpenConsole: handleOpenNodeConsole,
+                onDeleteNode: handleDeleteNode,
+                onUpdateNodeData: updateNodeData, // Add this line
+            }
+
+            const newNode = {
+                id: `${ type }-${ Date.now() }`,
+                type,
+                position,
+                data: enhancedNodeData,
+            }
+
+            setNodes((nds) => nds.concat(newNode))
+        },
+        [
+            reactFlowInstance,
+            setNodes,
+            handleNodePlayPause,
+            handleNodeToggleActive,
+            handleOpenNodeConsole,
+            handleDeleteNode,
+            updateNodeData,
+        ],
+    )
+
+    const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
+        setSelectedNode(node)
+    }, [])
+
+    // Clean up interval on unmount
+    useEffect(() => {
+        return () => {
+            if (simulationIntervalRef.current) {
+                clearInterval(simulationIntervalRef.current)
+            }
+        }
+    }, [])
+
     // Add a useEffect to check for API keys on component mount
     useEffect(() => {
         // Check if Gemini API key is available from environment variables
@@ -275,6 +281,7 @@ export default function FlowBuilder() {
                         onNodeClick={onNodeClick}
                         nodeTypes={nodeTypes}
                         fitView
+                        defaultViewport={{ x: 0, y: 0, zoom: 0.5 }}
                     >
                         <Background />
                         <Controls />
@@ -300,9 +307,6 @@ export default function FlowBuilder() {
                             <Button variant="outline" size="icon" onClick={() => setIsApiKeyModalOpen(true)}>
                                 <Key className="h-4 w-4" />
                             </Button>
-                            <Button variant="outline" size="icon" onClick={() => setIsWhatsAppModalOpen(true)}>
-                                <MessageSquare className="h-4 w-4" />
-                            </Button>
                         </Panel>
                         {isLibraryOpen && (
                             <Panel position="top-left" className="bg-white p-4 rounded-md shadow-md">
@@ -323,14 +327,6 @@ export default function FlowBuilder() {
                     />
                 )}
                 {isApiKeyModalOpen && <ApiKeyModal onClose={() => setIsApiKeyModalOpen(false)} onSave={handleSaveApiKey} />}
-                {isWhatsAppModalOpen && (
-                    <WhatsAppConfigModal
-                        onClose={() => setIsWhatsAppModalOpen(false)}
-                        onSave={() => {
-                            console.log("WhatsApp Configured")
-                        }}
-                    />
-                )}
                 <FlowConsole />
             </ReactFlowProvider>
         </div>

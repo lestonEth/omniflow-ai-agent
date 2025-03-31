@@ -2,6 +2,7 @@ import { Handle, Position } from "@xyflow/react"
 import type React from "react"
 import NodeControls from "./node-controls"
 import NodeOutputDisplay from "../node-output-display"
+import * as LucideIcons from "lucide-react"
 
 interface ActionNodeProps {
   data: any
@@ -12,11 +13,13 @@ interface ActionNodeProps {
 
 // Explicitly define as React FC
 const ActionNode: React.FC<ActionNodeProps> = ({ data, isConnectable, selected, id }) => {
+  // Get the icon component from Lucide
+  const IconComponent = data.icon ? LucideIcons[data.icon as keyof typeof LucideIcons] : LucideIcons.Circle
+
   return (
     <div
-      className={`p-3 rounded-md border-2 ${selected ? "border-blue-500" : "border-gray-200"} ${
-        data.isActive === false ? "opacity-50" : ""
-      } bg-white shadow-sm w-48 relative`}
+      className={`p-3 rounded-md border-2 ${ selected ? "border-blue-500" : "border-gray-200" } ${ data.isActive === false ? "opacity-50" : ""
+        } bg-white shadow-sm w-48 relative`}
     >
       <NodeControls
         nodeId={id}
@@ -27,6 +30,12 @@ const ActionNode: React.FC<ActionNodeProps> = ({ data, isConnectable, selected, 
         onOpenConsole={data.onOpenConsole}
         onDeleteNode={data.onDeleteNode}
       />
+
+      {/* Node Icon */}
+      <div className="absolute top-1 left-1 flex items-center text-xs">
+        <div className="flex items-center text-gray-600">{IconComponent && <IconComponent className="h-4 w-4" />}</div>
+      </div>
+
       <div className="font-medium text-sm mt-6">{data.name}</div>
       <div className="text-xs text-gray-500 mb-2">{data.description}</div>
 
@@ -62,13 +71,12 @@ const ActionNode: React.FC<ActionNodeProps> = ({ data, isConnectable, selected, 
       {/* Show execution status indicator if available */}
       {data.executionStatus && (
         <div
-          className={`absolute top-0 left-0 w-2 h-2 rounded-full m-1 ${
-            data.executionStatus === "success"
-              ? "bg-green-500"
-              : data.executionStatus === "error"
-                ? "bg-red-500"
-                : "bg-yellow-500"
-          }`}
+          className={`absolute top-0 left-0 w-2 h-2 rounded-full m-1 ${ data.executionStatus === "success"
+            ? "bg-green-500"
+            : data.executionStatus === "error"
+              ? "bg-red-500"
+              : "bg-yellow-500"
+            }`}
         />
       )}
     </div>

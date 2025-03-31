@@ -2,6 +2,7 @@ import { Handle, Position } from "@xyflow/react"
 import type React from "react"
 import NodeControls from "./node-controls"
 import NodeOutputDisplay from "../node-output-display"
+import * as LucideIcons from "lucide-react"
 
 interface ConditionNodeProps {
   data: any
@@ -12,6 +13,9 @@ interface ConditionNodeProps {
 
 // Explicitly define as React FC
 const ConditionNode: React.FC<ConditionNodeProps> = ({ data, isConnectable, selected, id }) => {
+  // Get the icon component from Lucide
+  const IconComponent = data.icon ? LucideIcons[data.icon as keyof typeof LucideIcons] : LucideIcons.Circle
+
   return (
     <div
       className={`p-3 rounded-md border-2 ${ selected ? "border-blue-500" : "border-yellow-200" } ${ data.isActive === false ? "opacity-50" : ""
@@ -26,6 +30,14 @@ const ConditionNode: React.FC<ConditionNodeProps> = ({ data, isConnectable, sele
         onOpenConsole={data.onOpenConsole}
         onDeleteNode={data.onDeleteNode}
       />
+
+      {/* Node Icon */}
+      <div className="absolute top-1 left-1 flex items-center text-xs">
+        <div className="flex items-center text-yellow-600">
+          {IconComponent && <IconComponent className="h-4 w-4" />}
+        </div>
+      </div>
+
       <div className="font-medium text-sm mt-6">{data.name}</div>
       <div className="text-xs text-gray-500 mb-2">{data.description}</div>
 

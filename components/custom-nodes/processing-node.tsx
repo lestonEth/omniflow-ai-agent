@@ -1,41 +1,23 @@
 import { Handle, Position } from "@xyflow/react"
 import type React from "react"
 import NodeControls from "./node-controls"
-import NodeOutputDisplay from "../node-output-display"
-import { Cpu, Bot } from "lucide-react"
-import { AIServiceFactory } from "@/lib/services/ai-service"
+import { BrainCircuit, TrendingUp, TrendingDown, BarChart } from "lucide-react"
 
-interface ProcessingNodeProps {
+interface TradingBotNodeProps {
   data: any
   isConnectable: boolean
   selected: boolean
   id: string
 }
 
-// Explicitly define as React FC
-const ProcessingNode: React.FC<ProcessingNodeProps> = ({ data, isConnectable, selected, id }) => {
-  // Check if this is a Text Processor node and determine if API is connected
-  const isTextProcessor = data.name === "Text Processor"
-  const model = isTextProcessor ? data.inputs?.find((input: any) => input.key === "model")?.value || "gemini-pro" : ""
-
-  // Determine which service provider to use based on the model
-  let serviceProvider = "simulation"
-  if (model.toLowerCase().includes("gpt")) {
-    serviceProvider = "openai"
-  } else if (model.toLowerCase().includes("gemini")) {
-    serviceProvider = "gemini"
-  } else if (model.toLowerCase().includes("claude")) {
-    serviceProvider = "anthropic"
-  }
-
-  // Check if the service is configured
-  const service = AIServiceFactory.getService(serviceProvider)
-  const isApiConnected = service && service.isConfigured()
+const TradingBotNode: React.FC<TradingBotNodeProps> = ({ data, isConnectable, selected, id }) => {
+  // Get trading strategy
+  const strategy = data.inputs?.find((input: any) => input.key === "strategy")?.value || "Balanced"
 
   return (
     <div
-      className={`p-3 rounded-md border-2 ${ selected ? "border-blue-500" : "border-blue-200" } ${ data.isActive === false ? "opacity-50" : ""
-        } ${ data.isPlaying ? "animate-pulse shadow-lg shadow-blue-200" : "" } bg-blue-50 shadow-sm w-48 relative`}
+      className={`p-3 rounded-md border-2 ${ selected ? "border-blue-500" : "border-indigo-200" } ${ data.isActive === false ? "opacity-50" : ""
+        } ${ data.isPlaying ? "animate-pulse shadow-lg shadow-indigo-200" : "" } bg-indigo-50 shadow-sm w-48 relative`}
     >
       <NodeControls
         nodeId={id}
@@ -46,25 +28,32 @@ const ProcessingNode: React.FC<ProcessingNodeProps> = ({ data, isConnectable, se
         onOpenConsole={data.onOpenConsole}
         onDeleteNode={data.onDeleteNode}
       />
+
+      {/* Node Icon */}
+      <div className="absolute top-1 left-1 flex items-center text-xs">
+        <div className="flex items-center text-indigo-600">
+          <BrainCircuit className="h-4 w-4" />
+        </div>
+      </div>
+
+      {/* Strategy indicator */}
+      <div className="absolute top-1 right-8 flex items-center text-xs">
+        <div
+          className={`flex items-center ${ strategy === "Aggressive"
+            ? "text-red-600"
+            : strategy === "Conservative"
+              ? "text-green-600"
+              : strategy === "Custom"
+                ? "text-purple-600"
+                : "text-blue-600"
+            }`}
+        >
+          <span className="text-[10px]">{strategy}</span>
+        </div>
+      </div>
+
       <div className="font-medium text-sm mt-6">{data.name}</div>
       <div className="text-xs text-gray-500 mb-2">{data.description}</div>
-
-      {/* API connection indicator for Text Processor */}
-      {isTextProcessor && (
-        <div className="absolute top-1 left-1 flex items-center text-xs">
-          {isApiConnected ? (
-            <div className="flex items-center text-green-600">
-              <Bot className="h-3 w-3 mr-1" />
-              <span className="text-[10px]">API Connected</span>
-            </div>
-          ) : (
-            <div className="flex items-center text-blue-600">
-              <Cpu className="h-3 w-3 mr-1" />
-              <span className="text-[10px]">Simulation</span>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Input Handles */}
       {data.inputs?.map((input: any, index: number) => (
@@ -75,7 +64,6 @@ const ProcessingNode: React.FC<ProcessingNodeProps> = ({ data, isConnectable, se
           id={input.key}
           style={{ top: 40 + index * 10, background: "#555" }}
           isConnectable={isConnectable}
-          className={data.isPlaying ? "animate-ping" : ""}
         />
       ))}
 
@@ -88,13 +76,57 @@ const ProcessingNode: React.FC<ProcessingNodeProps> = ({ data, isConnectable, se
           id={output.key}
           style={{ top: 40 + index * 10, background: "#555" }}
           isConnectable={isConnectable}
-          className={data.isPlaying ? "animate-ping" : ""}
         />
       ))}
 
       {/* Display output data when the node is playing */}
       {data.isPlaying && data.outputData && (
-        <NodeOutputDisplay nodeType="processing" nodeName={data.name} outputData={data.outputData} />
+        <div className="mt-2 p-2 bg-gray-50 border rounded-md">
+          <div className="text-xs text-gray-500 mb-1">AI Trading Analysis</div>
+
+          {data.outputData.recommendation && (
+            <div className="mb-2">
+              <div className="text-sm font-medium flex items-center">
+                {data.outputData.recommendation.action === "buy" ? (
+                  <>
+                    <TrendingUp className="h-3 w-3 text-green-500 mr-1" />
+                    <span className="text-green-600">Buy</span>
+                  </>
+                ) : data.outputData.recommendation.action === "sell" ? (
+                  <>
+                    <TrendingDown className="h-3 w-3 text-red-500 mr-1" />
+                    <span className="text-red-600">Sell</span>
+                  </>
+                ) : (
+                  <>
+                    <BarChart className="h-3 w-3 text-blue-500 mr-1" />
+                    <span className="text-blue-600">Hold</span>
+                  </>
+                )}{" "}
+                {data.outputData.recommendation.token}
+              </div>
+              <div className="text-xs text-gray-600 mt-1">{data.outputData.recommendation.reason}</div>
+            </div>
+          )}
+
+          {data.outputData.performance && (
+            <div className="text-xs border-t pt-1 mt-1">
+              <div className="flex justify-between">
+                <span>Win Rate:</span>
+                <span className={data.outputData.performance.winRate > 50 ? "text-green-600" : "text-red-600"}>
+                  {data.outputData.performance.winRate}%
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>Profit:</span>
+                <span className={data.outputData.performance.profit > 0 ? "text-green-600" : "text-red-600"}>
+                  {data.outputData.performance.profit > 0 ? "+" : ""}
+                  {data.outputData.performance.profit}%
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
       )}
 
       {/* Show execution status indicator if available */}
@@ -112,12 +144,12 @@ const ProcessingNode: React.FC<ProcessingNodeProps> = ({ data, isConnectable, se
       {/* Show processing indicator when node is playing but no output yet */}
       {data.isPlaying && !data.outputData && (
         <div className="mt-2 p-2 bg-gray-50 border rounded-md animate-pulse">
-          <div className="text-xs text-gray-500">Processing...</div>
+          <div className="text-xs text-gray-500">AI analyzing market data...</div>
         </div>
       )}
     </div>
   )
 }
 
-export default ProcessingNode
+export default TradingBotNode
 

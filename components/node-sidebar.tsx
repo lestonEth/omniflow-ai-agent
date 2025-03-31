@@ -123,7 +123,7 @@ export default function NodeSidebar({ node, onClose, updateNodeData }: NodeSideb
     }
 
     return (
-        <div className="w-80 h-full border-l bg-white p-4 overflow-y-auto">
+        <div className="w-80 h-full border-l bg-white p-4 overflow-y-auto pb-20">
             <div className="flex justify-between items-center mb-4">
                 <h3 className="font-medium text-lg">{nodeData.name}</h3>
                 <Button variant="ghost" size="icon" onClick={onClose}>

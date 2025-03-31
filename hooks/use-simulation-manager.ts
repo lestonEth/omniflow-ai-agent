@@ -3,9 +3,10 @@
 import { useState, useCallback, useEffect } from "react"
 import { useFlow } from "@/contexts/FlowContext"
 import { useSimulation } from "@/contexts/SimulationContext"
+import { simulateNode } from "@/lib/simulation"
 
 export const useSimulationLogic = () => {
-    const { nodes, edges, cascadeNodeExecution } = useFlow()
+    const { nodes, edges, setNodes } = useFlow()
     const { isSimulating, simulationSpeed } = useSimulation()
     const [simulationInterval, setSimulationInterval] = useState<NodeJS.Timeout | null>(null)
     const [currentlyExecutingNode, setCurrentlyExecutingNode] = useState<string | null>(null)
@@ -30,20 +31,54 @@ export const useSimulationLogic = () => {
                     // Add a small delay to make the execution flow visible
                     await new Promise((resolve) => setTimeout(resolve, 300))
 
-                    // Use cascadeNodeExecution to trigger updates to downstream nodes
-                    await cascadeNodeExecution(node.id)
+                    const result = await simulateNode({ ...node, data: { ...node.data, isPlaying: true } }, nodes, edges)
+
+                    setNodes((currentNodes) =>
+                        currentNodes.map((n) =>
+                            n.id === node.id
+                                ? {
+                                    ...n,
+                                    data: {
+                                        ...n.data,
+                                        consoleOutput: result.consoleOutput,
+                                        outputData: result.outputData,
+                                        executionStatus: result.executionStatus,
+                                    },
+                                }
+                                : n,
+                        ),
+                    )
 
                     // Add a small delay after execution to make the flow visible
                     await new Promise((resolve) => setTimeout(resolve, 300))
                 } catch (error) {
                     console.error(`Simulation error for node ${ node.id }: `, error)
+
+                    // Update node with error status
+                    setNodes((currentNodes) =>
+                        currentNodes.map((n) =>
+                            n.id === node.id
+                                ? {
+                                    ...n,
+                                    data: {
+                                        ...n.data,
+                                        executionStatus: "error",
+                                        consoleOutput: [
+                                            ...(n.data.consoleOutput as any || []),
+                                            `[${ new Date().toLocaleTimeString() }] Error: ${ (error as any).message }`,
+                                        ],
+                                    },
+                                }
+                                : n,
+                        ),
+                    )
                 } finally {
                     // Clear the currently executing node
                     setCurrentlyExecutingNode(null)
                 }
             }
         }
-    }, [nodes, cascadeNodeExecution])
+    }, [nodes, edges, setNodes])
 
     useEffect(() => {
         if (isSimulating) {
