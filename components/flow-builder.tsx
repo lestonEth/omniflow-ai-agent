@@ -13,7 +13,7 @@ import NodeSidebar from "@/components/node-sidebar"
 import NodeConsoleModal from "@/components/node-console-modal"
 import ApiKeyModal from "@/components/api-key-modal"
 import { nodeTypes } from "@/lib/node-types"
-import { useToast } from "@/components/ui/use-toast"
+import { useToast, toast } from "@/components/ui/use-toast"
 import { GeminiService } from "@/lib/services/gemini-service"
 import { AIServiceFactory } from "@/lib/services/ai-service"
 import FlowConsole from "@/components/flow-console"
@@ -26,7 +26,7 @@ export default function FlowBuilder() {
     const [isLibraryOpen, setIsLibraryOpen] = useState(false)
     const [consoleNode, setConsoleNode] = useState<Node | null>(null)
     const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false)
-    const { toast } = useToast()
+    // const { toast } = useToast()
 
     // hooks and context states
     const {
