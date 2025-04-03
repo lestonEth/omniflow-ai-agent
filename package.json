@@ -64,6 +64,7 @@
     "sonner": "^1.7.1",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
+    "telegraf": "^4.16.3",
     "vaul": "^0.9.6",
     "wagmi": "^2.14.15",
     "zod": "^3.24.1"

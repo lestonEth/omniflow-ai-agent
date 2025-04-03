@@ -70,6 +70,11 @@ export async function simulateNode(node: any, nodes: any[], edges: any[]) {
                 const { simulateOutputNode } = await import("@/lib/simulation//output-node-simulator")
                 outputData = simulateOutputNode(data, inputValues)
                 break
+            case "telegram":
+                // Handle Telegram node simulation
+                const { simulateTelegramSendMessage } = await import("@/lib/simulation/telegram-node-simulator")
+                outputData = await simulateTelegramSendMessage(data, inputValues, consoleOutput)
+                break
             default:
                 consoleOutput.push(`${ timestamp() } Unknown node type: ${ type }`)
         }
@@ -271,4 +276,5 @@ export * from "@/lib/simulation/input-node-simulator"
 export * from "@/lib/simulation/output-node-simulator"
 export * from "@/lib/simulation/processing-node-simulator"
 export * from "@/lib/simulation/crypto-node-simulator"
+export * from "@/lib/simulation/telegram-node-simulator"
 

@@ -6,6 +6,7 @@ import ProcessingNode from "@/components/custom-nodes/processing-node"
 import CryptoWalletNode from "@/components/custom-nodes/crypto-wallet-node"
 import CryptoTradeNode from "@/components/custom-nodes/crypto-trade-node"
 import TradingBotNode from "@/components/custom-nodes/trading-bot-node"
+import TelegramNode from "@/components/custom-nodes/telegram-node"
 
 // Make sure we're exporting a plain object with component references
 export const nodeTypes = {
@@ -17,5 +18,6 @@ export const nodeTypes = {
   crypto_wallet: CryptoWalletNode,
   crypto_trade: CryptoTradeNode,
   trading_bot: TradingBotNode,
+  telegram: TelegramNode,
 }
 
